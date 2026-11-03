@@ -195,9 +195,10 @@ async function loadLiveProducts() {
     // Read-only connectivity probe. A successful response proves the configured
     // public key can reach PostgREST and read this table under its current RLS policy.
     diagnosticStage = 'products table connectivity probe';
-    const probe = await supabase.from('products')
-      .select('id', { count: 'exact', head: true })
-      .limit(1);
+    const probe = await supabase
+  .from('products')
+  .select('id')
+  .limit(1);
     if (probe.error) throw probe.error;
 
     diagnosticStage = 'published products query and product_categories relationship';
