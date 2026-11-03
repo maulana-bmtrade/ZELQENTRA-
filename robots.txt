@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zalqentra.biz.id/sitemap.xml

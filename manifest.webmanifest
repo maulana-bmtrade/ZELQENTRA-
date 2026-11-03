@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Zelqentra — Global Trade Intelligence Network",
+  "short_name": "Zelqentra",
+  "description": "Connect with clarity. Trade with confidence. A global B2B trade intelligence network.",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101B2D",
+  "theme_color": "#101B2D",
+  "icons": [
+    {
+      "src": "assets/zelqentra-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
