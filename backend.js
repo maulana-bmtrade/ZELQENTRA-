@@ -9,8 +9,43 @@ const configured = Boolean(
   typeof cfg.anonKey === 'string' &&
   cfg.anonKey.trim().length > 0
 );
+// Capture safe transport metadata so opaque browser/network failures do not collapse to UNKNOWN.
+const diagnosticTransport = { lastRequest: null };
+const diagnosticFetch = async (input, init = {}) => {
+  const rawUrl = typeof input === 'string' ? input : (input?.url || '');
+  const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
+  diagnosticTransport.lastRequest = {
+    endpoint: (() => { try { const u = new URL(rawUrl); return `${u.origin}${u.pathname}`; } catch { return 'unresolved endpoint'; } })(),
+    apikeyHeaderPresent: headers.has('apikey'),
+    authorizationHeaderPresent: headers.has('authorization'),
+    startedAt: new Date().toISOString()
+  };
+  try {
+    const response = await fetch(input, init);
+    let body = '';
+    try { body = await response.clone().text(); } catch (_) {}
+    let parsed = null;
+    try { parsed = body ? JSON.parse(body) : null; } catch (_) {}
+    diagnosticTransport.lastRequest = {
+      ...diagnosticTransport.lastRequest,
+      httpStatus: response.status,
+      httpStatusText: response.statusText,
+      responseBody: parsed ? JSON.stringify(parsed).slice(0, 1800) : body.slice(0, 1800),
+      completedAt: new Date().toISOString()
+    };
+    return response;
+  } catch (cause) {
+    diagnosticTransport.lastRequest = {
+      ...diagnosticTransport.lastRequest,
+      networkError: safeValue(cause),
+      completedAt: new Date().toISOString()
+    };
+    throw cause;
+  }
+};
 const supabase = configured ? createClient(cfg.url, cfg.anonKey, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  global: { fetch: diagnosticFetch }
 }) : null;
 window.NEXVORA = { configured, supabase, mode: configured ? 'connecting' : 'demo' };
 
@@ -26,6 +61,20 @@ function setBackendStatus(mode, message) {
   badge.style.background = mode === 'live' ? '#176b4b' : mode === 'error' ? '#9a4b16' : '#35445b';
 }
 
+function safeValue(value) {
+  try {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    if (typeof value === 'string') return value.slice(0, 1800);
+    if (typeof value !== 'object') return String(value);
+    const parts = {};
+    for (const key of ['name','message','code','status','statusCode','details','hint','cause','type']) {
+      if (value[key] !== undefined) parts[key] = typeof value[key] === 'string' ? value[key].slice(0, 1800) : String(value[key]);
+    }
+    if (!Object.keys(parts).length) parts.serialized = JSON.stringify(value, Object.getOwnPropertyNames(value)).slice(0, 1800);
+    return JSON.stringify(parts);
+  } catch (_) { return String(value); }
+}
 const form = document.getElementById('leadForm');
 const note = document.getElementById('authFormNote');
 const modalTitle = document.getElementById('modalTitle');
@@ -200,12 +249,14 @@ async function loadLiveProducts() {
     };
   } catch (error) {
     // Keep diagnostics useful without ever exposing the configured key or auth tokens.
+    const transport = diagnosticTransport.lastRequest;
     const diagnostic = {
       stage: diagnosticStage,
-      code: String(error?.code || error?.status || 'UNKNOWN'),
-      message: String(error?.message || 'No error message returned'),
+      code: String(error?.code || error?.status || error?.statusCode || transport?.httpStatus || 'UNKNOWN'),
+      message: String(error?.message || error?.error_description || safeValue(error) || 'No error message returned'),
       details: String(error?.details || ''),
-      hint: String(error?.hint || '')
+      hint: String(error?.hint || ''),
+      transport: transport || null
     };
     console.error('[ZELQENTRA read-only connection verification]', diagnostic);
     window.NEXVORA.connection = {
@@ -227,7 +278,12 @@ async function loadLiveProducts() {
       `Error code/status: ${diagnostic.code}`,
       `Message: ${diagnostic.message}`,
       diagnostic.details ? `Details: ${diagnostic.details}` : '',
-      diagnostic.hint ? `Hint: ${diagnostic.hint}` : ''
+      diagnostic.hint ? `Hint: ${diagnostic.hint}` : '',
+      diagnostic.transport ? `Request endpoint: ${diagnostic.transport.endpoint}` : '',
+      diagnostic.transport ? `apikey header present: ${diagnostic.transport.apikeyHeaderPresent}` : '',
+      diagnostic.transport?.httpStatus ? `HTTP response: ${diagnostic.transport.httpStatus} ${diagnostic.transport.httpStatusText || ''}` : '',
+      diagnostic.transport?.responseBody ? `HTTP response body: ${diagnostic.transport.responseBody}` : '',
+      diagnostic.transport?.networkError ? `Network exception: ${diagnostic.transport.networkError}` : ''
     ].filter(Boolean).join('\n');
     box.append(summary, technical);
     grid.replaceChildren(box);
