@@ -141,14 +141,17 @@ async function loadLiveProducts() {
   setBackendStatus('connecting', 'CONNECTING · SUPABASE DATABASE');
   grid.innerHTML = '<div class="empty-state">Loading live marketplace listings from Supabase…</div>';
   document.getElementById('resultCount').textContent = 'Connecting to database…';
+  let diagnosticStage = 'client initialization';
   try {
     // Read-only connectivity probe. A successful response proves the configured
     // public key can reach PostgREST and read this table under its current RLS policy.
+    diagnosticStage = 'products table connectivity probe';
     const probe = await supabase.from('products')
       .select('id', { count: 'exact', head: true })
       .limit(1);
     if (probe.error) throw probe.error;
 
+    diagnosticStage = 'published products query and product_categories relationship';
     const { data, error } = await supabase.from('products')
       .select('id,name,description,origin_country,category_id,created_at,product_categories(name),company_id')
       .eq('status','published').order('created_at',{ascending:false}).range(0,59);
@@ -156,6 +159,7 @@ async function loadLiveProducts() {
     const companyIds = [...new Set((data || []).map(p => p.company_id).filter(Boolean))];
     let companies = [];
     if (companyIds.length) {
+      diagnosticStage = 'public_company_directory lookup';
       const result = await supabase.from('public_company_directory').select('id,display_name,country_code').in('id', companyIds);
       if (result.error) throw result.error;
       companies = result.data || [];
@@ -195,16 +199,39 @@ async function loadLiveProducts() {
       apply();
     };
   } catch (error) {
-    console.error('[ZELQENTRA read-only connection verification]', error);
+    // Keep diagnostics useful without ever exposing the configured key or auth tokens.
+    const diagnostic = {
+      stage: diagnosticStage,
+      code: String(error?.code || error?.status || 'UNKNOWN'),
+      message: String(error?.message || 'No error message returned'),
+      details: String(error?.details || ''),
+      hint: String(error?.hint || '')
+    };
+    console.error('[ZELQENTRA read-only connection verification]', diagnostic);
     window.NEXVORA.connection = {
       status: 'failed',
       checkedAt: new Date().toISOString(),
-      readOnly: true
+      readOnly: true,
+      diagnostic
     };
     setBackendStatus('error', 'BACKEND ERROR · DATABASE UNAVAILABLE');
     const reason = safeConnectionReason(error);
-    grid.innerHTML = `<div class="empty-state">Supabase could not be verified. ${escapeHtml(reason)} No demo listings are being substituted.</div>`;
-    document.getElementById('resultCount').textContent = 'Live data unavailable';
+    const box = document.createElement('div');
+    box.className = 'empty-state';
+    const summary = document.createElement('p');
+    summary.textContent = `Supabase could not be verified. ${reason} No demo listings are being substituted.`;
+    const technical = document.createElement('pre');
+    technical.style.cssText = 'white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;font:12px/1.5 ui-monospace,monospace;margin:18px 0 0;padding:12px;border:1px solid #d9e1e8;border-radius:10px;background:#f7f9fc;color:#26364a';
+    technical.textContent = [
+      `Diagnostic stage: ${diagnostic.stage}`,
+      `Error code/status: ${diagnostic.code}`,
+      `Message: ${diagnostic.message}`,
+      diagnostic.details ? `Details: ${diagnostic.details}` : '',
+      diagnostic.hint ? `Hint: ${diagnostic.hint}` : ''
+    ].filter(Boolean).join('\n');
+    box.append(summary, technical);
+    grid.replaceChildren(box);
+    document.getElementById('resultCount').textContent = `Live data unavailable · ${diagnostic.code}`;
   }
 }
 function safeConnectionReason(error) {
