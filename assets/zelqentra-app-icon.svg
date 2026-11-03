@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+<title id="title">Zelqentra app icon</title>
+<defs><linearGradient id="bg" x1="0" y1="0" x2="512" y2="512"><stop stop-color="#14243A"/><stop offset="1" stop-color="#101B2D"/></linearGradient><linearGradient id="g" x1="128" y1="112" x2="384" y2="400" gradientUnits="userSpaceOnUse"><stop stop-color="#38D6C4"/><stop offset="1" stop-color="#6B8CFF"/></linearGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/><circle cx="256" cy="256" r="174" fill="none" stroke="#FFFFFF" stroke-opacity=".08" stroke-width="2"/>
+<path d="M132 156H380L132 356H380" fill="none" stroke="url(#g)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="132" cy="156" r="25" fill="#38D6C4"/><circle cx="380" cy="156" r="25" fill="#6B8CFF"/><circle cx="132" cy="356" r="25" fill="#6B8CFF"/><circle cx="380" cy="356" r="25" fill="#38D6C4"/>
+</svg>
