@@ -3,5 +3,5 @@
 // NEVER put an sb_secret_* key or service_role key in this file.
 window.NEXVORA_SUPABASE = {
   url: "https://vtlywagosbudjedcfudv.supabase.co",
-  anonKey: "YOUR_SUPABASE_PUBLISHABLE_OR_LEGACY_ANON_KEY"
+  anonKey: "sb_publishable_1EAY12fQ8w-6mi6DsQG8vg_4PjD8Pil"
 };
