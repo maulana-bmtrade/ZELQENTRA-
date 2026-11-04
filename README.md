@@ -110,3 +110,34 @@ This release adds preliminary `privacy.html` and `terms.html` pages, links them 
 The public-facing platform brand is now **ZELQENTRA**. The positioning is **Global Trade Intelligence Network** and the slogan is **“Connect with clarity. Trade with confidence.”**
 
 See `BRAND_IDENTITY_GUIDELINES.md` for the complete visual and verbal system, and `BRAND_NAME_RESEARCH.md` for the preliminary name-screening caveats. Historical engineering reports retain the former working name where needed to preserve technical provenance. Legacy Supabase/JavaScript identifiers and the Supabase project slug remain unchanged intentionally.
+
+
+## Additional public discovery pages (2026-11-04)
+
+- `/marketplace/` remains the public product catalog and reads only `products.status = 'published'`.
+- `/companies/` is a new public company directory. It reads only `public_company_directory` and exposes only `id`, `display_name`, `country_code`, `industry`, and `logo_path`.
+- `/companies/profile.html?id=<company-uuid>` shows public directory fields and published products belonging to that company.
+- Marketplace filters now include minimum/maximum listed price and MOQ, in addition to category, country, sorting, search, and pagination.
+
+### Supabase browser configuration
+
+This is a static website; `.env.example` is a documentation template, not a server-side environment loader. Configure the existing `supabase-config.js` with the project URL and **Publishable** key. Never use a Secret/service_role key in browser code. Keep RLS enabled. The company directory must remain backed by `public_company_directory`; do not grant anonymous SELECT on `companies`.
+
+### Scope and limitations
+
+The public directory view in the supplied migrations exposes no company type, verification status, private contact details, address, or phone. Those fields are intentionally not displayed. This release does not claim to implement an authenticated company workspace, admin moderation console, AI provider integration, complete RFQ/quotation workflow, or attachment messaging UI. Those require further schema-aware implementation and live two-account RLS tests.
+
+## Phase 2 — Buyer/Supplier Operations
+
+This package adds the authenticated `/workspace/` route and a restricted `/workspace/admin.html` route. Workspace modules include company profile/team, invitation tokens, product management, buyer requests/RFQs, quotations, conversations/private attachments and notifications. The original public Marketplace and Company Directory remain the same data surfaces; managed products are not duplicated into a separate catalogue.
+
+**Important:** review `PHASE2_IMPLEMENTATION.md`, `SUPABASE_PHASE2_SETUP.md`, `SECURITY_PHASE2.md`, and `QA_PHASE2_REPORT.md`. The additive migration `supabase/migrations/202611040001_phase2_core.sql` is provided but has NOT been executed against the live Supabase project. No live Auth, Storage, cross-company RLS or browser end-to-end tests are claimed as passed. See the manual setup and post-migration test gates before production use.
+
+## Phase 2 security-audited package
+
+The security-audited Phase 2 package includes two ordered Phase 2 migrations:
+
+1. `supabase/migrations/202611040001_phase2_core.sql`
+2. `supabase/migrations/202611040002_phase2_predeployment_security_fixes.sql`
+
+Apply them only after baseline migrations `202611020001` through `202611020003` are confirmed on the same Supabase project. Review `SECURITY_PREDEPLOYMENT_AUDIT.md`, `QA_PREDEPLOYMENT_REPORT.md`, `SUPABASE_PHASE2_SETUP.md`, and run the read-only queries in `supabase/PHASE2_VALIDATION_QUERIES.sql`. The package has not been applied to Supabase LIVE; deployment approval remains blocked until live policy catalog and two-company tests pass.

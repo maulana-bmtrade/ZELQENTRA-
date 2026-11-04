@@ -123,3 +123,7 @@ where email = 'admin-address-you-control@example.com';
 - File signature inspection, malware scanning and verification review workflow need a trusted server-side implementation.
 
 Do not label ZELQENTRA production-ready until migration diagnostics, Auth, real marketplace queries, Storage, and direct cross-account RLS tests have all passed. Never send credentials or keys to ChatGPT. If asking for help, share only redacted error messages and non-sensitive validation results.
+
+## Phase 2 database extension
+
+Phase 2 adds an additive migration at `supabase/migrations/202611040001_phase2_core.sql`. It is not run by the frontend or deployment. Read `SUPABASE_PHASE2_SETUP.md` and inspect existing Storage policies before applying it manually. The workspace depends on the new invitation, buyer-request/RFQ, quotation revision/history, notification and moderation RPCs defined there.

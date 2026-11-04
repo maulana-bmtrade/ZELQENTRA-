@@ -57,7 +57,7 @@ function setBackendStatus(mode, message) {
   let badge = document.getElementById('backendStatus');
   if (!badge) { badge = document.createElement('div'); badge.id = 'backendStatus'; badge.setAttribute('role','status'); badge.style.cssText = 'position:fixed;right:14px;bottom:14px;z-index:9998;padding:8px 12px;border-radius:999px;font:600 11px/1.2 system-ui;letter-spacing:.02em;background:#17231f;color:#fff;box-shadow:0 4px 18px #0002'; document.body.appendChild(badge); }
   badge.textContent = message;
-  badge.title = mode === 'live' ? 'Connected to Supabase; marketplace data is from the database.' : mode === 'error' ? 'Supabase configuration exists but a live request failed. Preview cards are not database records.' : 'Supabase is not configured. Showing curated demo listings.';
+  badge.title = mode === 'live' ? 'Connected to Supabase; marketplace data is from the database.' : mode === 'error' ? 'Supabase configuration exists but a live request failed. No demo listings are substituted.' : 'Supabase is not configured. Live data is unavailable; no sample listings are substituted.';
   badge.style.background = mode === 'live' ? '#176b4b' : mode === 'error' ? '#9a4b16' : '#35445b';
 }
 
@@ -183,7 +183,7 @@ async function refreshSessionUI() {
 }
 
 async function loadLiveProducts() {
-  if (!supabase) { setBackendStatus('demo', 'DEMO MODE · SAMPLE DATA'); return; }
+  if (!supabase) { setBackendStatus('setup', 'SETUP REQUIRED · SUPABASE NOT CONFIGURED'); return; }
   const grid = document.getElementById('productGrid');
   const category = document.getElementById('categoryFilter');
   const searchInput = document.getElementById('marketSearch');
@@ -316,7 +316,29 @@ window.NEXVORA_API = {
   async createProduct(input) { requireClient(); const {data:{user}}=await supabase.auth.getUser(); const {data,error}=await supabase.from('products').insert({...input,created_by:user.id,status:'pending_review'}).select().single(); if(error) throw error; return data; },
   async updateProduct(id,input) { requireClient(); const {data,error}=await supabase.from('products').update(input).eq('id',id).select().single(); if(error) throw error; return data; },
   async deleteProduct(id) { requireClient(); const {error}=await supabase.from('products').delete().eq('id',id); if(error) throw error; },
-  async createBuyerRequest(input) { requireClient(); const {data:{user}}=await supabase.auth.getUser(); const {data:request,error}=await supabase.from('buyer_requests').insert({...input,created_by:user.id,status:'open'}).select().single(); if(error) throw error; const reference=`NX-${new Date().getFullYear()}-${crypto.randomUUID().slice(0,8).toUpperCase()}`; const rfq=await supabase.from('rfqs').insert({buyer_request_id:request.id,reference_code:reference,published_at:new Date().toISOString()}).select().single(); if(rfq.error) throw rfq.error; return {request,rfq:rfq.data}; },
+  async createBuyerRequest(input) {
+    requireClient();
+    const companyId = input?.buyer_company_id || input?.company_id;
+    if (!companyId) throw new Error('buyer_company_id is required.');
+    const { data: requestId, error } = await supabase.rpc('publish_buyer_request_with_rfq', {
+      p_company_id: companyId,
+      p_title: input.title,
+      p_description: input.description,
+      p_category_id: input.product_category_id || null,
+      p_quantity: input.quantity,
+      p_unit: input.unit,
+      p_destination_country: input.destination_country,
+      p_target_delivery_date: input.target_delivery_date || null
+    });
+    if (error) throw error;
+    const [{ data: request, error: requestError }, { data: rfq, error: rfqError }] = await Promise.all([
+      supabase.from('buyer_requests').select('*').eq('id', requestId).single(),
+      supabase.from('rfqs').select('*').eq('buyer_request_id', requestId).single()
+    ]);
+    if (requestError) throw requestError;
+    if (rfqError) throw rfqError;
+    return { request, rfq };
+  },
   async submitQuotation(input) { requireClient(); const {data:{user}}=await supabase.auth.getUser(); const {data,error}=await supabase.from('quotations').insert({...input,submitted_by:user.id}).select().single(); if(error) throw error; return data; },
   async listOpenRFQs() { requireClient(); const {data,error}=await supabase.from('rfqs').select('*,buyer_requests!inner(*)').or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).eq('buyer_requests.status','open').order('created_at',{ascending:false}); if(error) throw error; return data; },
   async adminOverview() { requireClient(); const {data,error}=await supabase.rpc('nexvora_admin_overview'); if(error) throw error; return data; },
@@ -346,12 +368,30 @@ if (supabase) {
           console.warn('[ZELQENTRA workspace setup]', error.message);
           toast(`Company workspace setup needs attention: ${error.message}`);
         }
+      } else if (event === 'PASSWORD_RECOVERY') {
+        const nextPassword = window.prompt('Enter your new password (at least 8 characters):');
+        if (nextPassword === null) {
+          toast('Password update cancelled. Open the recovery link again to retry.');
+          return;
+        }
+        if (nextPassword.length < 8) {
+          toast('Password must contain at least 8 characters. Open the recovery link again to retry.');
+          return;
+        }
+        const confirmation = window.prompt('Confirm your new password:');
+        if (confirmation !== nextPassword) {
+          toast('Passwords do not match. Open the recovery link again to retry.');
+          return;
+        }
+        const { error } = await supabase.auth.updateUser({ password: nextPassword });
+        if (error) toast(`Password update failed: ${error.message}`);
+        else toast('Your password has been updated successfully.');
       }
     }, 0);
   });
   refreshSessionUI();
   loadLiveProducts();
 } else {
-  setBackendStatus('demo', 'DEMO MODE · SAMPLE DATA');
-  console.info('[ZELQENTRA] Backend is in setup mode. Frontend demo remains active.');
+  setBackendStatus('setup', 'SETUP REQUIRED · SUPABASE NOT CONFIGURED');
+  console.info('[ZELQENTRA] Backend is in setup mode. No sample records are substituted.');
 }

@@ -1,11 +1,4 @@
-const products = [
- {name:"Premium Cocopeat Blocks",category:"Agri & Food",supplier:"IndoGrow Export",location:"Indonesia",symbol:"✺",art:"art-coco",description:"Washed and compressed coconut coir growing medium."},
- {name:"Industrial CNC Equipment",category:"Industrial",supplier:"PrecisionWorks Ltd.",location:"Germany",symbol:"⚙",art:"art-machine",description:"Precision machinery for advanced manufacturing."},
- {name:"Sustainable Packaging",category:"Packaging",supplier:"EcoForm Solutions",location:"Netherlands",symbol:"▤",art:"art-package",description:"Reusable and recyclable packaging solutions."},
- {name:"Enterprise IoT Sensors",category:"Technology",supplier:"NexSense Systems",location:"Singapore",symbol:"⌁",art:"art-tech",description:"Connected monitoring solutions for industry."},
- {name:"Specialty Coffee Beans",category:"Agri & Food",supplier:"Origin Valley Co.",location:"Indonesia",symbol:"◉",art:"art-food",description:"Traceable specialty coffee from selected origins."},
- {name:"Stainless Steel Components",category:"Industrial",supplier:"MetalCore Manufacturing",location:"South Korea",symbol:"⬡",art:"art-metal",description:"Precision components for commercial applications."}
-];
+const products = []; // No synthetic listings: public catalog data must come from Supabase.
 const grid=document.getElementById('productGrid');
 const search=document.getElementById('marketSearch');
 const category=document.getElementById('categoryFilter');
@@ -20,7 +13,7 @@ document.getElementById('searchButton').addEventListener('click',applyFilters);
 search.addEventListener('keydown',e=>{if(e.key==='Enter')applyFilters();});
 category.addEventListener('change',applyFilters);
 document.getElementById('clearFilters').addEventListener('click',()=>{search.value='';category.value='All';applyFilters();});
-document.getElementById('showAllProducts').addEventListener('click',()=>{search.value='';category.value='All';applyFilters();if(!window.NEXVORA?.configured)showToast('You are viewing all sample marketplace listings.');});
+document.getElementById('showAllProducts').addEventListener('click',()=>{search.value='';category.value='All';applyFilters();if(!window.NEXVORA?.configured)showToast('Live product listings require Supabase configuration.');});
 grid.addEventListener('click',e=>{const btn=e.target.closest('[data-product]');if(btn)showToast(`${btn.dataset.product}: sample listing preview. Product detail pages will be connected in the backend phase.`);});
 const backdrop=document.getElementById('modalBackdrop');
 function openModal(mode){backdrop.hidden=false;document.body.style.overflow='hidden';}
