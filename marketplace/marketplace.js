@@ -6,6 +6,10 @@ const searchInput = document.getElementById('marketSearch');
 const categoryFilter = document.getElementById('categoryFilter');
 const countryFilter = document.getElementById('countryFilter');
 const sortFilter = document.getElementById('sortFilter');
+const priceMinFilter = document.getElementById('priceMinFilter');
+const priceMaxFilter = document.getElementById('priceMaxFilter');
+const moqMinFilter = document.getElementById('moqMinFilter');
+const moqMaxFilter = document.getElementById('moqMaxFilter');
 const countLabel = document.getElementById('resultCount');
 const pagination = document.getElementById('pagination');
 let currentPage = 0;
@@ -39,7 +43,7 @@ function cardMarkup(product) {
     <h3>${escapeHtml(product.name)}</h3><p class="catalog-card-desc">${escapeHtml(shortDescription)}</p>
     <div class="catalog-card-supplier"><span class="supplier-avatar">${escapeHtml(supplierInitial(companyName))}</span><div><strong>${escapeHtml(companyName)}</strong><small>${escapeHtml(company.country_code ? countryName(company.country_code) : 'Supplier')}</small></div></div>
     <div class="catalog-card-facts"><span>${escapeHtml(origin)}</span><b>${escapeHtml(moq)}</b></div>
-    <div class="catalog-card-action"><span>${escapeHtml(formatPrice(product))}</span><a href="product/?id=${encodeURIComponent(product.id)}">View product ↗</a></div></div></article>`;
+    <div class="catalog-card-action"><span>${escapeHtml(formatPrice(product))}</span><a href="../companies/profile.html?id=${encodeURIComponent(company.id || product.company_id)}">Supplier ↗</a><a href="product/?id=${encodeURIComponent(product.id)}">View product ↗</a></div></div></article>`;
 }
 
 async function loadFilters() {
@@ -75,6 +79,14 @@ async function fetchProducts(sequence) {
   }
   if (categoryFilter.value) query = query.eq('category_id', categoryFilter.value);
   if (countryFilter.value) query = query.eq('origin_country', countryFilter.value);
+  const minPrice = priceMinFilter.value.trim() === '' ? null : Number(priceMinFilter.value);
+  const maxPrice = priceMaxFilter.value.trim() === '' ? null : Number(priceMaxFilter.value);
+  const minMoq = moqMinFilter.value.trim() === '' ? null : Number(moqMinFilter.value);
+  const maxMoq = moqMaxFilter.value.trim() === '' ? null : Number(moqMaxFilter.value);
+  if (minPrice !== null && Number.isFinite(minPrice) && minPrice >= 0) query = query.gte('price_max', minPrice);
+  if (maxPrice !== null && Number.isFinite(maxPrice) && maxPrice >= 0) query = query.lte('price_min', maxPrice);
+  if (minMoq !== null && Number.isFinite(minMoq) && minMoq >= 0) query = query.gte('minimum_order_quantity', minMoq);
+  if (maxMoq !== null && Number.isFinite(maxMoq) && maxMoq >= 0) query = query.lte('minimum_order_quantity', maxMoq);
   if (sortFilter.value === 'oldest') query = query.order('created_at', { ascending: true }).order('id', { ascending: true });
   else if (sortFilter.value === 'name') query = query.order('name', { ascending: true }).order('id', { ascending: true });
   else query = query.order('created_at', { ascending: false }).order('id', { ascending: true });
@@ -135,7 +147,8 @@ document.getElementById('searchButton').addEventListener('click', resetPageAndRe
 searchInput.addEventListener('keydown', event => { if (event.key === 'Enter') resetPageAndRefresh(); });
 searchInput.addEventListener('input', () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(resetPageAndRefresh, 350); });
 [categoryFilter, countryFilter, sortFilter].forEach(control => control.addEventListener('change', resetPageAndRefresh));
-document.getElementById('clearFilters').addEventListener('click', () => { searchInput.value = ''; categoryFilter.value = ''; countryFilter.value = ''; sortFilter.value = 'newest'; resetPageAndRefresh(); });
+[priceMinFilter, priceMaxFilter, moqMinFilter, moqMaxFilter].forEach(control => control.addEventListener('change', resetPageAndRefresh));
+document.getElementById('clearFilters').addEventListener('click', () => { searchInput.value = ''; categoryFilter.value = ''; countryFilter.value = ''; priceMinFilter.value = ''; priceMaxFilter.value = ''; moqMinFilter.value = ''; moqMaxFilter.value = ''; sortFilter.value = 'newest'; resetPageAndRefresh(); });
 pagination.addEventListener('click', event => { const button = event.target.closest('button[data-page]'); if (!button || button.disabled) return; currentPage = Number(button.dataset.page); refresh(); window.scrollTo({ top: document.querySelector('.market-results-head').offsetTop - 25, behavior: 'smooth' }); });
 
 (async () => {

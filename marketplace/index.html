@@ -15,7 +15,7 @@
   <header class="site-header">
     <a class="brand" href="../index.html" aria-label="ZELQENTRA home"><img src="../assets/zelqentra-symbol.svg" alt="" class="brand-mark"><span>ZELQENTRA<span class="brand-b2b">B2B</span></span></a>
     <button class="mobile-toggle" id="mobileToggle" type="button" aria-label="Open navigation" aria-controls="mainNav" aria-expanded="false">☰</button>
-    <nav class="main-nav" id="mainNav"><a class="active" href="./">Explore Marketplace</a><a href="#categories">Categories</a><a href="#productResults">Products</a><a href="../index.html#directory">Business Network</a></nav>
+    <nav class="main-nav" id="mainNav"><a class="active" href="./">Explore Marketplace</a><a href="#categories">Categories</a><a href="#productResults">Products</a><a href="../companies/">Company Directory</a><a href="../workspace/">Business Workspace</a></nav>
     <div class="header-actions"><a class="text-button" href="../index.html">Home</a><a class="button button-dark button-small" href="../index.html#leadForm">Join ZELQENTRA <span>↗</span></a></div>
   </header>
   <main>
@@ -33,6 +33,10 @@
         <div class="market-filter-row" id="categories">
           <label><span>Category</span><select id="categoryFilter"><option value="">All categories</option></select></label>
           <label><span>Country of origin</span><select id="countryFilter"><option value="">All countries</option></select></label>
+          <label><span>Minimum price</span><input id="priceMinFilter" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Any"></label>
+          <label><span>Maximum price</span><input id="priceMaxFilter" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Any"></label>
+          <label><span>Minimum MOQ</span><input id="moqMinFilter" type="number" min="0" step="1" inputmode="numeric" placeholder="Any"></label>
+          <label><span>Maximum MOQ</span><input id="moqMaxFilter" type="number" min="0" step="1" inputmode="numeric" placeholder="Any"></label>
           <label><span>Sort by</span><select id="sortFilter"><option value="newest">Newest products</option><option value="oldest">Oldest products</option><option value="name">Product name (A–Z)</option></select></label>
           <button id="clearFilters" class="filter-reset" type="button">Reset filters ↺</button>
         </div>
@@ -43,7 +47,7 @@
       <p class="catalog-security-note">Only published products and supplier information approved for public display are shown.</p>
     </section>
   </main>
-  <footer class="footer"><div class="footer-main"><div class="footer-brand"><a class="brand" href="../index.html"><img src="../assets/zelqentra-symbol.svg" class="brand-mark" alt=""><span>ZELQENTRA<span class="brand-b2b">B2B</span></span></a><p>Connect with clarity.<br>Trade with confidence.</p></div><div><b>PLATFORM</b><a href="./">Explore Marketplace</a><a href="../index.html#directory">Business Network</a></div><div><b>ECOSYSTEM</b><a href="../index.html#how-it-works">How it works</a><a href="../index.html#leadForm">Create profile</a></div><div><b>GET IN TOUCH</b><a href="mailto:maulana.bmtrade@gmail.com">maulana.bmtrade@gmail.com</a><a href="https://wa.me/628573627955" target="_blank" rel="noopener noreferrer">WhatsApp: +62 8573-6277-955</a></div></div><div class="footer-bottom"><span>© <span id="year"></span> ZELQENTRA B2B. All rights reserved.</span><span class="footer-legal"><a href="../privacy.html">Privacy Policy</a><a href="../terms.html">Terms of Service</a></span><span>Designed for global business.</span></div></footer>
+  <footer class="footer"><div class="footer-main"><div class="footer-brand"><a class="brand" href="../index.html"><img src="../assets/zelqentra-symbol.svg" class="brand-mark" alt=""><span>ZELQENTRA<span class="brand-b2b">B2B</span></span></a><p>Connect with clarity.<br>Trade with confidence.</p></div><div><b>PLATFORM</b><a href="./">Explore Marketplace</a><a href="../companies/">Company Directory</a><a href="../workspace/">Business Workspace</a></div><div><b>ECOSYSTEM</b><a href="../index.html#how-it-works">How it works</a><a href="../index.html#leadForm">Create profile</a></div><div><b>GET IN TOUCH</b><a href="mailto:maulana.bmtrade@gmail.com">maulana.bmtrade@gmail.com</a><a href="https://wa.me/628573627955" target="_blank" rel="noopener noreferrer">WhatsApp: +62 8573-6277-955</a></div></div><div class="footer-bottom"><span>© <span id="year"></span> ZELQENTRA B2B. All rights reserved.</span><span class="footer-legal"><a href="../privacy.html">Privacy Policy</a><a href="../terms.html">Terms of Service</a></span><span>Designed for global business.</span></div></footer>
   <script src="../supabase-config.js"></script><script>
   window.setTimeout(() => { if (!window.__zelqentraMarketplaceModuleReady) { const root = document.getElementById('productResults'); if (root) root.innerHTML = '<div class="catalog-state error"><strong>Marketplace could not initialize</strong><p>The marketplace module or its required network dependency did not load. Check browser connectivity and try again.</p><button class="button button-outline state-action" onclick="location.reload()">Reload page</button></div>'; const count = document.getElementById('resultCount'); if (count) count.textContent = 'Marketplace module unavailable'; } }, 15000);
 </script><script type="module" src="marketplace.js"></script>
